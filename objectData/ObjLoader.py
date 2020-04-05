@@ -1,4 +1,6 @@
+from __future__ import annotations
 import copy
+import math
 #IMPORTANT NOTE: In this project, I'll be using the Z-up setup, meaning, that Y will be depth and Z will be the height value
 
 class Verticle2D:
@@ -16,6 +18,14 @@ class Verticle2D:
         self.X = x
         self.Y = y
 
+    """
+    Returns True if it equals with another verticle
+
+    Parameters
+    ----------
+    other : Verticle2D
+        The other verticle to check
+    """
     def __eq__(self, other):
         return self.X == other.X and self.Y == other.Y
 
@@ -36,6 +46,12 @@ class Verticle:
     -------
     GetValue(coordinate)
         Returns with the selected coordinate
+    CrossProduct(other)
+        Calculates the cross product with another verticle.
+        Returns a verticle representing the cross product.
+    DorProduct(other)
+        Calculates the cross product with another verticle.
+        Returns a verticle representing the cross product.
     """
     def __init__(self, x: float, y: float, z: float):
         self.X = x
@@ -57,6 +73,57 @@ class Verticle:
         elif coordinate == 2: return self.Z
         return 0
 
+    def __eq__(self, other) -> bool:
+        """
+        Returns True if it equals with another verticle
+
+        Parameters
+        ----------
+        other : Verticle
+            The other verticle to check
+        """
+        return self.X == other.X and self.Y == other.Y and self.Z == other.Z
+
+    def __sub__(self, other):
+        return Verticle(self.X - other.X, self.Y - other.Y, self.Z - other.Z)
+
+    def __add__(self, other):
+        return Verticle(self.X + other.X, self.Y + other.Y, self.Z + other.Z)
+
+    def __neg__(self):
+        return Verticle(-self.X, -self.Y, -self.Z)
+
+    
+    def CrossProduct(self, other) -> Verticle:
+        """
+        Calculates the cross product with another verticle.
+        Returns a verticle representing the cross product.
+
+        Parameters
+        ----------
+        other : Verticle
+            The other verticle
+        """
+        i = (self.Y * other.Z) - (self.Z * other.Y)
+        j = (self.Z * other.X) - (self.X * other.Z)
+        k = (self.X * other.Y) - (self.Y * other.X)
+        return Verticle(i, j, k)
+
+    def DotProduct(self, other) -> float:
+        """
+        Calculates the dot product with another verticle
+
+        Parameters
+        ----------
+        other : Verticle
+            The other verticle
+        """
+        x = self.X * other.X
+        y = self.Y * other.Y
+        z = self.Z * other.Z
+        return x + y + z
+        
+
 class Face:
     """
     A class used to represent an face created by 3 vertices
@@ -74,6 +141,10 @@ class Face:
     -------
     CollisionCheck(line_start, line_end)
         Returns a True if the 3D line intersects/collides with the face, False otherwise.
+    GenerateNormal()
+        Returns a verticle representing the face's normal vector.
+    CalculateAverage()
+        Returns a verticle made from the other verticles avarage value.
     """
     def __init__(self, v1: Verticle, v2: Verticle, v3: Verticle):
         self.Verticle1 = v1
@@ -96,6 +167,23 @@ class Face:
         top = self.__PartCheck(line_start, line_end, 0, 1)
 
         return (front and side) or (side and top) or (front and top)
+
+    def GenerateNormal(self) -> Verticle:
+        """
+        Returns a verticle representing the face's normal vector.
+        """
+        v1 = self.Verticle2 - self.Verticle1
+        v2 = self.Verticle3 - self.Verticle1
+        return v1.CrossProduct(v2)
+
+    def CalculateAverage(self) -> Verticle:
+        """
+        Returns a verticle made from the other verticles avarage value.
+        """
+        x = (self.Verticle1.X + self.Verticle2.X + self.Verticle3.X) / 3
+        y = (self.Verticle1.Y + self.Verticle2.Y + self.Verticle3.Y) / 3
+        z = (self.Verticle1.Z + self.Verticle2.Z + self.Verticle3.Z) / 3
+        return Verticle(x, y, z)
 
     def __PartCheck(self, line_start: Verticle, line_end: Verticle, x_dimension: int, y_dimension: int) -> bool:
         """
@@ -206,3 +294,61 @@ def LineCollision(line_a_start: Verticle2D, line_a_end: Verticle2D, line_b_start
         uA = ((line_b_end.X-line_b_start.X)*(line_a_start.Y-line_b_start.Y) - (line_b_end.Y-line_b_start.Y)*(line_a_start.X-line_b_start.X)) / dividor
         uB = ((line_a_end.X-line_a_start.X)*(line_a_start.Y-line_b_start.Y) - (line_a_end.Y-line_a_start.Y)*(line_a_start.X-line_b_start.X)) / dividor
         return (uA >= 0 and uA <= 1 and uB >= 0 and uB <= 1)
+
+def VerticleDistance(a: Verticle, b: Verticle) -> float:
+    """
+    Returns the Euclidan distance of two vertices
+
+    Parameters
+    ----------
+    a : Verticle
+        The first verticle
+    b : Verticle
+        The second verticle
+    """
+    return math.sqrt(pow(a.X - b.X, 2) + pow(a.Y - b.Y, 2) + pow(a.Z - b.Z, 2))
+
+def NormalizeLine(start_point: Verticle, end_point: Verticle) -> Verticle:
+    """
+    Takes two vertices, representing a segment, then returns the normalised end point, so the segments lenght will be 1
+
+    Parameters
+    ----------
+    a : Verticle
+        The first verticle
+    b : Verticle
+        The second verticle
+    """
+    new_end = end_point - start_point
+    dist = VerticleDistance(Verticle(0, 0, 0), new_end)
+    if dist == 0 or dist == 1:
+        return new_end + start_point
+    return Verticle(new_end.X / dist, new_end.Y / dist, new_end.Z / dist) + start_point
+
+def LineFaceCollision(face: Face, line_start: Verticle, line_end: Verticle) -> Verticle:
+    """
+    Calculates the position of the line-face collision. Returns the point of the collision
+
+    Parameters
+    ----------
+    face : Face
+        The colliding face
+    line_start : Verticle
+        The starting point of the ray
+    line_end: Verticle
+        A point on the ray. Used to calculate the ray's trajectory.
+    """
+    # algorithm based on: http://geomalgorithms.com/a05-_intersect-1.html
+    n = face.GenerateNormal()
+    P0 = copy.deepcopy(line_start)
+    u = line_end - line_start
+    P1 = P0 + u
+    V0 = face.CalculateAverage()
+    dotp = n.DotProduct(u)
+    if dotp == 0:
+        return Verticle(0, 0, 0)
+    w = P0 - V0
+    sI = (w.DotProduct(-n)) / dotp
+    return Verticle(u.X * sI + w.X + V0.X, u.Y * sI + w.Y + V0.Y, u.Z * sI + w.Z + V0.Z)
+
+
