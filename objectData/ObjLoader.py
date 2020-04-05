@@ -1,5 +1,4 @@
 import copy
-
 #IMPORTANT NOTE: In this project, I'll be using the Z-up setup, meaning, that Y will be depth and Z will be the height value
 
 class Verticle2D:
@@ -16,6 +15,9 @@ class Verticle2D:
     def __init__(self, x = 0, y = 0):
         self.X = x
         self.Y = y
+
+    def __eq__(self, other):
+        return self.X == other.X and self.Y == other.Y
 
 class Verticle:
     """
@@ -116,40 +118,18 @@ class Face:
         #v1 and v2
         collider_start = Verticle2D(self.Verticle1.GetValue(x_dimension), self.Verticle1.GetValue(y_dimension))
         collider_end = Verticle2D(self.Verticle2.GetValue(x_dimension), self.Verticle2.GetValue(y_dimension))
-        if self.LineCollision(line_start_view, line_end_view, collider_start, collider_end):
+        if LineCollision(line_start_view, line_end_view, collider_start, collider_end):
             return True
         # v2 and v3
         collider_start = Verticle2D(self.Verticle2.GetValue(x_dimension), self.Verticle2.GetValue(y_dimension))
         collider_end = Verticle2D(self.Verticle3.GetValue(x_dimension), self.Verticle3.GetValue(y_dimension))
-        if self.LineCollision(line_start_view, line_end_view, collider_start, collider_end):
+        if LineCollision(line_start_view, line_end_view, collider_start, collider_end):
             return True
 
         # v3 and v1
         collider_start = Verticle2D(self.Verticle3.GetValue(x_dimension), self.Verticle3.GetValue(y_dimension))
         collider_end = Verticle2D(self.Verticle1.GetValue(x_dimension), self.Verticle1.GetValue(y_dimension))
-        return self.LineCollision(line_start_view, line_end_view, collider_start, collider_end)
-        
-
-
-    @staticmethod
-    def LineCollision(line_a_start: Verticle2D, line_a_end: Verticle2D, line_b_start: Verticle2D, line_b_end: Verticle2D) -> bool:
-        """
-        Returns a True if the two 2D line intersects/collides, False otherwise.
-
-        Parameters
-        ----------
-        line_a_start : Verticle2D
-            The starting point of the first 2D line
-        line_a_end : Verticle2D
-            The ending point of the first 2D line
-        line_b_start : Verticle2D
-            The starting point of the second 2D line
-        line_b_end : Verticle2D
-            The ending point of the second 2D line
-        """
-        uA = ((line_b_end.x-line_b_start.x)*(line_a_start.y-line_b_start.y) - (line_b_end.y-line_b_start.y)*(line_a_start.x-line_b_start.x)) / ((line_b_end.y-line_b_start.y)*(line_a_end.x-line_a_start.x) - (line_b_end.x-line_b_start.x)*(line_a_end.y-line_a_start.y))
-        uB = ((line_a_end.x-line_a_start.x)*(line_a_start.y-line_b_start.y) - (line_a_end.y-line_a_start.y)*(line_a_start.x-line_b_start.x)) / ((line_b_end.y-line_b_start.y)*(line_a_end.x-line_a_start.x) - (line_b_end.x-line_b_start.x)*(line_a_end.y-line_a_start.y))
-        return (uA >= 0 and uA <= 1 and uB >= 0 and uB <= 1)
+        return LineCollision(line_start_view, line_end_view, collider_start, collider_end)
         
 
 class ObjFile:
@@ -186,3 +166,43 @@ class ObjFile:
                         break
                 line = reader.readline()
                 current_line = 1
+
+
+def LineCollision(line_a_start: Verticle2D, line_a_end: Verticle2D, line_b_start: Verticle2D, line_b_end: Verticle2D) -> bool:
+        """
+        Returns a True if the two 2D line intersects/collides, False otherwise.
+
+        Parameters
+        ----------
+        line_a_start : Verticle2D
+            The starting point of the first 2D line
+        line_a_end : Verticle2D
+            The ending point of the first 2D line
+        line_b_start : Verticle2D
+            The starting point of the second 2D line
+        line_b_end : Verticle2D
+            The ending point of the second 2D line
+        """
+        if line_a_start == line_a_end or line_b_start == line_b_end: # if line a or b is just a point
+            if (line_a_start == line_a_end and line_b_end == line_b_start): # if line a and b is just a point
+                return line_a_start == line_b_start
+            if line_a_start == line_a_end: # if line a is just a point
+                return (line_b_start.X - line_b_end.X) * (line_b_start.Y - line_b_end.Y) == (line_b_end.X - line_a_end.X) * (line_b_end.Y - line_a_end.Y)
+            if line_b_end == line_b_start: # if line b is just a point
+                return (line_a_start.X - line_a_end.X) * (line_a_start.Y - line_a_end.Y) == (line_a_end.X - line_b_end.X) * (line_a_end.Y - line_b_end.Y)
+
+        aXDist = line_a_end.X-line_a_start.X
+        aYDist = line_a_end.Y-line_a_start.Y
+        bXDist = line_b_end.X-line_b_start.X
+        bYDist = line_b_end.Y-line_b_start.Y
+        dividor = ((bYDist)*(aXDist) - (bXDist)*(aYDist))
+        if dividor == 0: # this means, that the two lines are in the same dimension (booth have the same x or y component)
+            if aXDist == 0 and bXDist == 0:
+                return (line_a_start.Y <= line_b_start.Y <= line_a_end.Y or line_a_start.Y <= line_b_end.Y <= line_a_end.Y) or \
+                    (line_a_end.Y <= line_b_start.Y <= line_a_start.Y or line_a_end.Y <= line_b_end.Y <= line_a_start.Y)
+            # since the two cannot be points (we already checked that), the two must share the same Y value
+            return (line_a_start.X <= line_b_start.X <= line_a_end.X or line_a_start.X <= line_b_end.X <= line_a_end.X) or \
+                (line_a_end.X <= line_b_start.X <= line_a_start.X or line_a_end.X <= line_b_end.X <= line_a_start.X)
+        uA = ((line_b_end.X-line_b_start.X)*(line_a_start.Y-line_b_start.Y) - (line_b_end.Y-line_b_start.Y)*(line_a_start.X-line_b_start.X)) / dividor
+        uB = ((line_a_end.X-line_a_start.X)*(line_a_start.Y-line_b_start.Y) - (line_a_end.Y-line_a_start.Y)*(line_a_start.X-line_b_start.X)) / dividor
+        return (uA >= 0 and uA <= 1 and uB >= 0 and uB <= 1)
