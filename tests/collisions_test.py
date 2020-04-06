@@ -1,4 +1,4 @@
-from objectData.ObjLoader import LineCollision, Verticle2D, Verticle, Face, LineFaceCollision, VerticleDistance
+from objectData.objectView import LineCollision, Verticle2D, Verticle, Face, LineFaceCollision, VerticleDistance
 
 
 def test_LineCollision():
