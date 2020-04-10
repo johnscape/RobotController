@@ -97,6 +97,14 @@ class Verticle:
     def __mul__(self, other: float):
         return Verticle(self.X * other, self.Y * other, self.Z * other)
 
+    def __rmul__(self, other: float):
+        return Verticle(self.X * other, self.Y * other, self.Z * other)
+
+    def __imul__(self, other: float):
+        return Verticle(self.X * other, self.Y * other, self.Z * other)
+
+    def __ne__(self, other):
+        return not(self.X == other.X and self.Y == other.Y and self.Z == other.Z)
     
     def CrossProduct(self, other) -> Verticle:
         """
@@ -132,6 +140,14 @@ class Verticle:
         self.X /= s
         self.Y /= s
         self.Z /= s
+
+    def Sum(self):
+        return self.X + self.Y + self.Z
+
+    def SwapUp(self):
+        tmp = self.Y
+        self.Y = self.Z
+        self.Z = tmp
         
 
 class Face:
@@ -177,6 +193,8 @@ class Face:
         top = self.__PartCheck(line_start, line_end, 0, 1)
 
         return (front and side) or (side and top) or (front and top)
+
+
 
     def GenerateNormal(self) -> Verticle:
         """
@@ -241,6 +259,11 @@ class Face:
         if d2 < d3:
             return d2
         return d3
+
+    def SwapUp(self):
+        self.Verticle1.SwapUp()
+        self.Verticle2.SwapUp()
+        self.Verticle3.SwapUp()
         
 def LineCollision(line_a_start: Verticle2D, line_a_end: Verticle2D, line_b_start: Verticle2D, line_b_end: Verticle2D) -> bool:
         """
