@@ -4,6 +4,8 @@ import math
 
 #IMPORTANT NOTE: In this project, I'll be using the Z-up setup, meaning, that Y will be depth and Z will be the height value
 
+EPSILON = 0.0000001
+
 class Verticle2D:
     """
     A class used to represent a 2D verticle
@@ -73,6 +75,11 @@ class Verticle:
         elif coordinate == 1: return self.Y
         elif coordinate == 2: return self.Z
         return 0
+
+    def CopyFrom(self, other: Verticle):
+        self.X = other.X
+        self.Y = other.Y
+        self.Z = other.Z
 
     def __eq__(self, other) -> bool:
         """
@@ -145,9 +152,7 @@ class Verticle:
         return self.X + self.Y + self.Z
 
     def SwapUp(self):
-        tmp = self.Y
-        self.Y = self.Z
-        self.Z = tmp
+        return Verticle(self.X, self.Z, self.Y)
         
 
 class Face:
@@ -177,9 +182,10 @@ class Face:
         self.Verticle2 = v2
         self.Verticle3 = v3
 
-    def CollisionCheck(self, line_start: Verticle, line_end: Verticle) -> bool:
+    def CollisionCheck(self, line_start: Verticle, line_end: Verticle, collision_point = Verticle(0, 0, 0)) -> bool: # TODO: set collision_point to return
         """
         Returns a True if the 3D line intersects/collides with the face, False otherwise.
+        Using Möller–Trumbore intersection algorithm
         
         Parameters
         ----------
@@ -187,13 +193,37 @@ class Face:
             The starting point of the 3D line
         line_end : Verticle
             The ending point of the 3D line
+        collision_point: Verticle
+            Out value, good for getting the point of the collision
         """
-        front = self.__PartCheck(line_start, line_end, 0, 2)
-        side = self.__PartCheck(line_start, line_end, 1, 2)
-        top = self.__PartCheck(line_start, line_end, 0, 1)
+        ray = line_end - line_start
 
-        return (front and side) or (side and top) or (front and top)
+        edge1 = self.Verticle2 - self.Verticle1
+        edge2 = self.Verticle3 - self.Verticle1
 
+        h = ray.CrossProduct(edge2)
+        a = edge1.DotProduct(h)
+        if a > -EPSILON and a < EPSILON:
+            #This ray is parallel to this triangle.
+            front = self.__PartCheck(line_start, line_end, 0, 2)
+            side = self.__PartCheck(line_start, line_end, 1, 2)
+            top = self.__PartCheck(line_start, line_end, 0, 1)
+            return (front and side) or (side and top) or (front and top)
+
+        f = 1.0 / a
+        s = line_start - self.Verticle1
+        u = f * s.DotProduct(h)
+        if u < 0 or u > 1:
+            return False
+
+        q = s.CrossProduct(edge1)
+        v = f * ray.DotProduct(q)
+        if v < 0 or u + v > 1:
+            return False
+        
+        t = f * edge2.DotProduct(q)
+        collision_point.CopyFrom(line_start + ray * t)
+        return t > EPSILON
 
 
     def GenerateNormal(self) -> Verticle:
@@ -261,9 +291,9 @@ class Face:
         return d3
 
     def SwapUp(self):
-        self.Verticle1.SwapUp()
-        self.Verticle2.SwapUp()
-        self.Verticle3.SwapUp()
+        self.Verticle1 = self.Verticle1.SwapUp()
+        self.Verticle2 = self.Verticle2.SwapUp()
+        self.Verticle3 = self.Verticle3.SwapUp()
         
 def LineCollision(line_a_start: Verticle2D, line_a_end: Verticle2D, line_b_start: Verticle2D, line_b_end: Verticle2D) -> bool:
         """

@@ -17,7 +17,7 @@ class DepthCamera:
         self.ViewDegree = 90
 
         self.__MinDistance = 1
-        self.__MaxDistance = 100
+        self.__MaxDistance = 10
 
         self.Object = ObjFile()
 
@@ -40,21 +40,31 @@ class DepthCamera:
 
         for x in range(self.ViewPlaneSize[0]):
             for y in range(self.ViewPlaneSize[1]):
-                current_point = bottom_point + (shift_x * x) + (shift_y * (self.ViewPlaneSize[1] - y - 1))
-                current_point.Normalize()
+                full_x_shift = shift_x * x
+                full_y_shift = shift_y * (self.ViewPlaneSize[1] - y - 1)
+                current_point = bottom_point + full_x_shift + full_y_shift
+                #current_point.Normalize()
                 current_point *= self.__MaxDistance
 
-                collider_faces = []
+                smallest_distance = self.__MaxDistance
                 for face in possible_faces:
-                    if face.CollisionCheck(self.ViewPoint, current_point):
-                        collider_faces.append(face)
+                    collision_point = Verticle(0, 0, 0)
+                    if face.CollisionCheck(self.ViewPoint, current_point, collision_point):
+                        dist = VerticleDistance(collision_point, self.ViewPoint)
+                        if dist < smallest_distance:
+                            smallest_distance = dist
+                if smallest_distance <= self.__MinDistance:
+                    image[x][y] = 1
+                    continue
+                image[x][y] = 1 - ((smallest_distance - self.__MinDistance) / (self.__MaxDistance - self.__MinDistance))
+                
 
-        color_img = np.zeros((self.ViewPlaneSize[0], self.ViewPlaneSize[1], 3))
+        """color_img = np.zeros((self.ViewPlaneSize[0], self.ViewPlaneSize[1], 3), dtype=int)
         for x in range(self.ViewPlaneSize[0]):
             for y in range(self.ViewPlaneSize[1]):
                 for c in range(3):
-                    color_img[x][y][c] = math.floor(255 * image[x][y])
-        return color_img
+                    color_img[x][y][c] = math.floor(255 * image[x][y])"""
+        return image
                 
                     
 

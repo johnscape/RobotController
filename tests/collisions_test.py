@@ -48,7 +48,7 @@ def test_faceCollision3D():
     v2 = Verticle(3, 4, 3)
     v3 = Verticle(2, 2, 2)
 
-    p1 = Verticle(0, 0, 0)
+    p1 = Verticle(1, 1, -1)
     p2 = Verticle(5, 2, 3)
 
     f = Face(v1, v2, v3)
