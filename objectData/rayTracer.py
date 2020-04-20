@@ -1,10 +1,21 @@
-from objectData.objectView import Verticle, Face, LineFaceCollision, VerticleDistance
+from objectData.objectView import Verticle, Face, LineFaceCollision, VerticleDistance, Verticle2D
 from objectData.ObjLoader import ObjFile
 import numpy as np
 import copy
 import math
+from settings import Verbose
+
+# TODO: Remove this file
 
 UP = Verticle(0, 0, 1)
+
+def SameSide(p: Verticle, v1: Verticle, v2: Verticle, v3: Verticle):
+    v21 = v2 - v1
+    v31 = v3 - v1
+    normal = v21.CrossProduct(v31)
+    dotV4 = normal.DotProduct()
+    dotP = normal.DotProduct(p - v1)
+    return 
 
 class DepthCamera:
     def __init__(self):
@@ -16,10 +27,11 @@ class DepthCamera:
         self.PixelDistance = 0.01
         self.ViewDegree = 90
 
-        self.__MinDistance = 1
-        self.__MaxDistance = 10
+        self.MinDistance = 1
+        self.MaxDistance = 10
 
         self.Object = ObjFile()
+        self.VerboseSetting = Verbose.PARTIAL
 
     def Render(self):
         image = np.zeros((self.ViewPlaneSize[0], self.ViewPlaneSize[1]))
@@ -31,32 +43,41 @@ class DepthCamera:
             return image
         possible_faces = []
         for face in self.Object.Faces:
-            if face.DistanceFromVerticle(self.ViewPoint) < self.__MaxDistance:
+            if face.DistanceFromVerticle(self.ViewPoint) < self.MaxDistance:
                 possible_faces.append(face)
-                # TODO: remove faces that are back
 
 
         bottom_point, shift_x, shift_y = self.CalculateVectors()
+        percent = round((self.ViewPlaneSize[0] * self.ViewPlaneSize[1]) / 100)
+
+        # selecting faces for render
+        bottom_left = bottom_point + (shift_x * (self.ViewPlaneSize[0] - 1))
+        bottom_right = bottom_point
+        top_left = bottom_point + (shift_x * (self.ViewPlaneSize[0] - 1)) + (shift_y * (self.ViewPlaneSize[1] - 1))
+        top_right = bottom_point + (shift_y * (self.ViewPlaneSize[1] - 1))
 
         for x in range(self.ViewPlaneSize[0]):
+            print(x)
             for y in range(self.ViewPlaneSize[1]):
+                if self.VerboseSetting.value[0] <= 1 and (x + 1) * (y + 1) % percent == 0:
+                    print("{0} percent done.".format(x * y / percent))
                 full_x_shift = shift_x * x
                 full_y_shift = shift_y * (self.ViewPlaneSize[1] - y - 1)
                 current_point = bottom_point + full_x_shift + full_y_shift
                 #current_point.Normalize()
-                current_point *= self.__MaxDistance
+                current_point *= self.MaxDistance
 
-                smallest_distance = self.__MaxDistance
+                smallest_distance = self.MaxDistance
                 for face in possible_faces:
                     collision_point = Verticle(0, 0, 0)
                     if face.CollisionCheck(self.ViewPoint, current_point, collision_point):
                         dist = VerticleDistance(collision_point, self.ViewPoint)
                         if dist < smallest_distance:
                             smallest_distance = dist
-                if smallest_distance <= self.__MinDistance:
+                if smallest_distance <= self.MinDistance:
                     image[x][y] = 1
                     continue
-                image[x][y] = 1 - ((smallest_distance - self.__MinDistance) / (self.__MaxDistance - self.__MinDistance))
+                image[x][y] = 1 - ((smallest_distance - self.MinDistance) / (self.MaxDistance - self.MinDistance))
                 
 
         """color_img = np.zeros((self.ViewPlaneSize[0], self.ViewPlaneSize[1], 3), dtype=int)
@@ -70,7 +91,7 @@ class DepthCamera:
 
     def CalculateVectors(self):
         # RAYTRACING
-        t = (self.ViewDirection * self.__MaxDistance) # forward pointing vector
+        t = (self.ViewDirection * self.MaxDistance) # forward pointing vector
         b = UP.CrossProduct(t)
         tn = copy.deepcopy(t)
         tn.Normalize()
@@ -92,3 +113,5 @@ class DepthCamera:
         bottom_point = tn - gx * bn - gy * vn
 
         return bottom_point, shift_x, shift_y
+
+    #def FaceInView(self, face: Face):

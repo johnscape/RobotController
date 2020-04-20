@@ -143,7 +143,7 @@ class Verticle:
         return x + y + z
 
     def Normalize(self):
-        s = math.sqrt(pow(self.X, 2) + pow(self.Y, 2) + pow(self.Z, 2))
+        s = self.Lenght()
         self.X /= s
         self.Y /= s
         self.Z /= s
@@ -153,6 +153,9 @@ class Verticle:
 
     def SwapUp(self):
         return Verticle(self.X, self.Z, self.Y)
+
+    def Lenght(self):
+        return math.sqrt(pow(self.X, 2) + pow(self.Y, 2) + pow(self.Z, 2))
         
 
 class Face:
