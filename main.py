@@ -4,6 +4,9 @@ import numpy as np
 import math
 from settings import Verbose
 from robot.imgConverter import LoadFromDataFile
+from networking.server import RobotServer
+from networking.client import RobotClient
+import time
 
 '''d = DepthCamera()
 d.Object.VerboseSetting = Verbose.PARTIAL
@@ -26,4 +29,9 @@ for x in range(img_data.shape[0]):
 save_data = np.clip(save_data, 0, 255)
 save_data = save_data.astype(np.uint8)
 cv2.imwrite("data.png", save_data)'''
-LoadFromDataFile("img.data")
+#LoadFromDataFile("img.data")
+rs = RobotServer()
+rs.StartServer()
+time.sleep(5)
+rc = RobotClient()
+rc.SendMsg("robot")

@@ -8,6 +8,10 @@
 #include "Shader.h"
 #include "Camera.h"
 #include <fstream>
+#include "UdpClient.h"
+
+#define ADDR "127.0.0.1"
+#define PORT 5005
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -17,6 +21,10 @@ glm::vec3 cameraPos = glm::vec3(0.0f, 1.3f, 0.0f);
 
 int main(int argc, char** argv)
 {
+    UdpClient client(ADDR, PORT);
+    client.send("camera", 5);
+    std::string data = client.receive();
+    std::cout << data << std::endl;
     unsigned int SCR_WIDTH = 512;
     unsigned int SCR_HEIGHT = 512;
     std::string fileName = "mesh.obj";
