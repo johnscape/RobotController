@@ -144,3 +144,5 @@ glad/
 GLFW/
 glm/
 KHR/
+
+*.jpg

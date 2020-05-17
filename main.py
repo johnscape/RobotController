@@ -35,3 +35,8 @@ rs.StartServer()
 time.sleep(5)
 rc = RobotClient()
 rc.SendMsg("robot")
+rc.DiscardMsg()
+for i in range(60):
+    print("Waiting: {0}...".format(60 - i))
+    time.sleep(1)
+rc.BuildImage()
