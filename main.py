@@ -7,6 +7,7 @@ from robot.imgConverter import LoadFromDataFile
 from networking.server import RobotServer
 from networking.client import RobotClient
 import time
+from robot.controller import Robot
 
 '''d = DepthCamera()
 d.Object.VerboseSetting = Verbose.PARTIAL
@@ -30,7 +31,7 @@ save_data = np.clip(save_data, 0, 255)
 save_data = save_data.astype(np.uint8)
 cv2.imwrite("data.png", save_data)'''
 #LoadFromDataFile("img.data")
-rs = RobotServer()
+'''rs = RobotServer()
 rs.StartServer()
 time.sleep(5)
 rc = RobotClient()
@@ -39,4 +40,10 @@ rc.DiscardMsg()
 for i in range(60):
     print("Waiting: {0}...".format(60 - i))
     time.sleep(1)
-rc.BuildImage()
+rc.BuildImage()'''
+
+#FIXME: UDP arrival order
+
+r = Robot()
+r.Setup()
+r.Start()

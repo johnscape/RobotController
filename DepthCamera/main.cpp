@@ -2,8 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
-#include <string>
-#include <sstream>
+#include "ArgParser.hpp"
 #include "ObjLoader.h"
 #include "Shader.h"
 #include "Camera.h"
@@ -24,58 +23,11 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
-glm::vec3 cameraPos = glm::vec3(0.0f, 1.3f, 0.0f);
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.55f, 0.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);
 
 void SendImage(BYTE* img, unsigned int w, unsigned int h, UdpClient& client)
 {
-    //size_t max_data = (SERVER_LIMIT / sizeof(float));
-    /*unsigned int pos = 0;
-    unsigned int max_pos = w * h * 3 * sizeof(float);
-
-    char* data = new char[SERVER_LIMIT];
-    FloatToChar converter;
-    converter.f = img[0];
-
-    unsigned int sent_packages = 0;
-    unsigned int float_stepper = 0;
-    unsigned int float_counter = 0;
-
-    std::cout << img[0] << std::endl;
-
-    while (pos < max_pos)
-    {
-        for (unsigned int i = 0; i < SERVER_LIMIT; i++)
-        {
-            if (!i)
-                data[i] = 'c';
-            else
-            {
-                data[i] = converter.c[float_stepper];
-                std::cout << +data[i] << std::endl;
-                float_stepper++;
-                if (float_stepper == 4)
-                {
-                    float_stepper = 0;
-                    float_counter++;
-                    if (float_counter >= w * h * 3)
-                        break;
-                    converter.f = img[float_counter];
-                    std::cout << img[float_counter] << std::endl;
-                }
-            }
-
-            pos++;
-            if (pos >= max_pos)
-                break;
-
-        }
-        client.send(data, SERVER_LIMIT);
-        sent_packages++;
-        //
-    }
-    std::cout << "Packages sent: " << sent_packages << std::endl;
-    delete [] data;*/
-
     unsigned int pos = 0;
     unsigned int max_pos = w * h * 3;
     unsigned int sent_packages = 0;
@@ -94,55 +46,28 @@ void SendImage(BYTE* img, unsigned int w, unsigned int h, UdpClient& client)
 
         client.send(data, SERVER_LIMIT);
         sent_packages++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-
-
     std::cout << "Packages sent: " << sent_packages << std::endl;
     delete [] data;
 }
 
 int main(int argc, char** argv)
 {
+    ArgParser argp(argc, argv);
     UdpClient client(ADDR, PORT);
     client.send("camera", 5);
     std::string data = client.receive();
-    std::cout << data << std::endl;
 
     ObjLoader loader;
-    std::string fileName = "mesh.obj";
-    loader.LoadObjFrom(fileName);
+    loader.LoadObjFrom(argp.GetFileName());
+    client.send("loaded", 6);
 
-    unsigned int SCR_WIDTH = IMG_SIZE;
-    unsigned int SCR_HEIGHT = IMG_SIZE;
+    unsigned int SCR_WIDTH = argp.GetSize();
+    unsigned int SCR_HEIGHT = argp.GetSize();
 
-    bool noWindow = false;
-    for (int i = 0; i < argc; i++)
-    {
-        if (i == 0)
-            continue;
-        if (argv[i] == "--width" || argv[i] == "-W")
-        {
-            std::stringstream ss;
-            ss.str(argv[i + 1]);
-            ss >> SCR_WIDTH;
-            i++;
-        }
-        else if (argv[i] == "--height" || argv[i] == "-H")
-        {
-            std::stringstream ss;
-            ss.str(argv[i + 1]);
-            ss >> SCR_HEIGHT;
-            i++;
-        }
-        else if (argv[i] == "--file" || argv[i] == "-F")
-        {
-            fileName = argv[i + 1];
-            i++;
-        }
-        else if (argv[i] == "--no_window" || argv[i] == "--no-window" || argv[i] == "-N")
-            noWindow = true;
-    }
+    float cameraRot = 0;
+
 
     // glfw: initialize and configure
     // ------------------------------
@@ -168,11 +93,9 @@ int main(int argc, char** argv)
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-
     glEnable(GL_DEPTH_TEST);
 
     Shader shader("shader.vs", "shader.fs");
-
     float* vertices = new float[loader.GetVertices().size()];
     unsigned int* indices = new unsigned int[loader.GetIndicies().size()];
 
@@ -187,7 +110,7 @@ int main(int argc, char** argv)
     glGenBuffers(1, &VBO);
 
     glBindVertexArray(VAO);
-
+    //itt már nem
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * loader.GetVertices().size(), vertices, GL_STATIC_DRAW);
 
@@ -202,10 +125,10 @@ int main(int argc, char** argv)
 
     shader.use();
 
-
     BYTE* pixels = new BYTE[SCR_WIDTH * SCR_HEIGHT * 3];
     bool changed = true;
     bool exit = false;
+
     while (!glfwWindowShouldClose(window) && !exit) {
 
         client.send("get", 3);
@@ -221,7 +144,6 @@ int main(int argc, char** argv)
             {
             case 1:
                 cameraPos += glm::vec3(0.0f, dist, 0.0f);
-                std::cout << "Moving up!" << std::endl;
                 break;
             case 2:
                 cameraPos += glm::vec3(0.0f, -dist, 0.0f);
@@ -232,12 +154,30 @@ int main(int argc, char** argv)
             case 4:
                 cameraPos += glm::vec3(dist, 0.0f, 0.0f);
                 break;
-            case 5:
-                cameraPos += glm::vec3(0.0f, 0.0f, -dist);
+            case 5: //forward
+                cameraPos += cameraFront * dist;
+                std::cout << "Moving forward" << std::endl;
                 break;
-            case 6:
-                cameraPos += glm::vec3(0.0f, 0.0f, dist);
+            case 6: //backward
+                cameraPos += -cameraFront * dist;
                 break;
+            case 7:
+                cameraRot += dist;
+                std::cout << "Rotating" << std::endl;
+                break;
+            case 8:
+                cameraRot -= dist;
+            }
+
+            if (cameraRot > 360)
+                cameraRot -= 360;
+            else if (cameraRot < 0)
+                cameraRot += 360;
+
+            if (ans[0] == 7 || ans[0] == 8)
+            {
+                cameraFront.z = -cos(glm::radians(cameraRot));
+                cameraFront.x = sin(glm::radians(cameraRot));
             }
 
             changed = true;
@@ -249,7 +189,7 @@ int main(int argc, char** argv)
         glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.0f);
         shader.setMat4("projection", projection);
 
-        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0.0f, 1.0f, 0.0f));
         shader.setMat4("view", view);
 
 

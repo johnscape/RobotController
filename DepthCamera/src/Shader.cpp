@@ -17,7 +17,17 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* geo
     {
         // open files
         vShaderFile.open(vertexPath);
+        if (!vShaderFile.is_open())
+        {
+            std::cout << "Cannot open vertex shader!" << std::endl;
+            return;
+        }
         fShaderFile.open(fragmentPath);
+        if (!fShaderFile.is_open())
+        {
+            std::cout << "Cannot open fragment shader!" << std::endl;
+            return;
+        }
         std::stringstream vShaderStream, fShaderStream;
         // read file's buffer contents into streams
         vShaderStream << vShaderFile.rdbuf();
