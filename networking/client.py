@@ -58,6 +58,7 @@ class RobotClient:
         return data
 
     def BuildImage(self):
+        print("Building image...")
         image_count = math.ceil((IMAGE_SIZE * IMAGE_SIZE * 3) / 1024)
         fragments = deque([])
         full_data = b''
@@ -94,6 +95,7 @@ class RobotClient:
         #cv2.waitKey(0)
         #cv2.destroyAllWindows()
         #print("Image created!")
+        print("Image built")
         return image
 
 
