@@ -137,12 +137,12 @@ __pycache__/
 *.cbp
 *.depend
 *.layout
-obj/
-bin/
-lib-mingw/
-glad/
-GLFW/
-glm/
-KHR/
+Camera/.vs/*
+Camera/Debug/*
+Camera/OpenGL/include/*
+Camera/x64/*
+*.dll
+*.mtl
+*.bmp
 
 *.jpg

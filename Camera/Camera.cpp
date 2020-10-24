@@ -46,7 +46,7 @@ void Camera::ProcessMouseMovement(float xoffset, float yoffset, GLboolean constr
     xoffset *= MouseSensitivity;
     yoffset *= MouseSensitivity;
 
-    Yaw   += xoffset;
+    Yaw += xoffset;
     Pitch += yoffset;
 
     if (constrainPitch)
@@ -69,6 +69,11 @@ void Camera::ProcessMouseScroll(float yoffset)
         Zoom = 45.0f;
 }
 
+float Camera::GetZoom()
+{
+    return Zoom;
+}
+
 void Camera::updateCameraVectors()
 {
     glm::vec3 front;
@@ -77,5 +82,5 @@ void Camera::updateCameraVectors()
     front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
     Front = glm::normalize(front);
     Right = glm::normalize(glm::cross(Front, WorldUp));
-    Up    = glm::normalize(glm::cross(Right, Front));
+    Up = glm::normalize(glm::cross(Right, Front));
 }
