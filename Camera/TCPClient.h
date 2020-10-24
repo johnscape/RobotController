@@ -1,22 +1,48 @@
 #pragma once
-#include <stdio.h> 
-#ifdef __WIN32__
-# include <winsock2.h>
-#else
-# include <sys/socket.h>
-#endif
-#include <arpa/inet.h> 
-#include <unistd.h> 
-#include <string.h> 
+#include <winsock2.h>
+#include <windows.h>
+#include <ws2tcpip.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string>
+#include <queue>
+#include <thread>
+#include <mutex>
+
+#pragma comment (lib, "Ws2_32.lib")
+#pragma comment (lib, "Mswsock.lib")
+#pragma comment (lib, "AdvApi32.lib")
+
+
 class TCPClient
 {
 public:
-	TCPClient();
+	TCPClient(std::string ip, unsigned int targetPort, bool verbose = false);
 	~TCPClient();
-	bool IsConnected();
+
+	void Init();
+	void Connect();
+
+	void Send(std::string message);
+	std::string ReceiveLastMessage();
+
+	void Close();
+
+	void ListenCycle(bool v);
 
 private:
-	bool Connected;
+	WSAData wsadata;
+	SOCKET connection;
+	struct addrinfo* result, * ptr;
 
+	unsigned int port;
+	std::string ipAddress;
+
+	bool initFinished;
+	bool verbose;
+
+	std::queue<std::string> messages;
+	std::mutex messageLock;
+
+	std::thread* ReadThread;
 };
-
