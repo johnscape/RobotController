@@ -1,18 +1,24 @@
 #include "TCPClient.h"
 #include <iostream>
 #include <sstream>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 #define BUFFER_SIZE 1024
 
-TCPClient::TCPClient(std::string ip, unsigned int targetPort, bool verbose) :
-	result(nullptr), ptr(nullptr), ipAddress(ip), port(targetPort), verbose(verbose), ReadThread(nullptr)
+TCPClient::TCPClient(std::string ip, unsigned int targetPort, bool verbose, unsigned int width, unsigned int height) :
+	result(nullptr), ptr(nullptr), ipAddress(ip), port(targetPort), verbose(verbose), ReadThread(nullptr), WinWidth(width), WinHeight(height)
 {
+	colorBuffer = new unsigned char[3 * width * height];
+	depthBuffer = new unsigned char[width * height];
 	Init();
 }
 
 TCPClient::~TCPClient()
 {
 	Close();
+	delete[] colorBuffer;
+	delete[] depthBuffer;
 }
 
 void TCPClient::Init()
@@ -162,5 +168,26 @@ void TCPClient::ListenCycle(bool v)
 			std::cout << "Connection closed." << std::endl;
 		else
 			std::cout << "Error while receiving: " << WSAGetLastError() << std::endl;
+	}
+}
+
+void TCPClient::SendImage(bool depth)
+{
+	if (depth)
+	{
+		//TODO: implement LZW
+		glReadPixels(0, 0, WinWidth, WinHeight, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, depthBuffer);
+		std::string s;
+		for (size_t i = 0; i < WinWidth * WinHeight; i++)
+			s += depthBuffer[i];
+		Send(s);
+	}
+	else
+	{
+		glReadPixels(0, 0, WinWidth, WinHeight, GL_RGB, GL_UNSIGNED_BYTE, colorBuffer);
+		std::string s;
+		for (size_t i = 0; i < WinWidth * WinHeight * 3; i++)
+			s += depthBuffer[i];
+		Send(s);
 	}
 }

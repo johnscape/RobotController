@@ -17,7 +17,7 @@
 class TCPClient
 {
 public:
-	TCPClient(std::string ip, unsigned int targetPort, bool verbose = false);
+	TCPClient(std::string ip, unsigned int targetPort, bool verbose = false, unsigned int width = 512, unsigned int height = 512);
 	~TCPClient();
 
 	void Init();
@@ -29,6 +29,8 @@ public:
 	void Close();
 
 	void ListenCycle(bool v);
+
+	void SendImage(bool depth);
 
 private:
 	WSAData wsadata;
@@ -45,4 +47,10 @@ private:
 	std::mutex messageLock;
 
 	std::thread* ReadThread;
+
+	unsigned char* colorBuffer;
+	unsigned char* depthBuffer;
+
+	unsigned int WinWidth;
+	unsigned int WinHeight;
 };

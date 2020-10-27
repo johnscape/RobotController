@@ -144,8 +144,6 @@ int main(void)
     shader.use();
     shader.setInt("tex", 0);
 
-    
-
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
