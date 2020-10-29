@@ -22,8 +22,9 @@ ModelLoader::~ModelLoader()
         delete[] IndiciesArray;
 }
 
-bool ModelLoader::StartLoading(std::string file, unsigned int& texture, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO)
+bool ModelLoader::StartLoading(std::string file, unsigned int& texture, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO, std::string folder)
 {
+    startingFolder = folder;
     if (!LoadModel(file))
     {
         std::cout << "Error while loading model!" << std::endl;
@@ -47,7 +48,7 @@ bool ModelLoader::StartLoading(std::string file, unsigned int& texture, unsigned
 bool ModelLoader::LoadModel(std::string file)
 {
     std::cout << "Loading model " << file << "..." << std::endl;
-    std::ifstream reader(file);
+    std::ifstream reader(startingFolder + file);
     if (!reader.good())
     {
         std::cout << "Model file does not exists: " << file << std::endl;
@@ -132,6 +133,7 @@ bool ModelLoader::LoadModel(std::string file)
 
 bool ModelLoader::LoadTextures(unsigned int& texture)
 {
+    texturePath = startingFolder + texturePath;
     std::cout << "Loading texture from " << texturePath << std::endl;
     std::ifstream reader(texturePath);
     if (!reader.good())
@@ -155,7 +157,7 @@ bool ModelLoader::LoadTextures(unsigned int& texture)
     reader.open(imageFile);
     if (!reader.good())
     {
-        std::cout << "Image not found: " << texturePath << std::endl;
+        std::cout << "Image not found: " << imageFile << std::endl;
         return false;
     }
     reader.close();

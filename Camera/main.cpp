@@ -11,6 +11,7 @@
 #include <map>
 #include "Camera.h"
 #include <sstream>
+#include "TCPClient.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -28,7 +29,7 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(3.0f, 0.4f, -4.0f));
 bool firstMouse = true; // csak lekezeljuk az eslo eger mozgatast
 float yaw = -90.0f;    // yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
 float pitch = 0.0f;
@@ -90,9 +91,26 @@ void saveImage(GLFWwindow* w) {
     std::cout << "Saved as " << n << std::endl;
 }
 
-int main(void)
+int main(int argc, char* argv[])
 {
+    std::string vsShaderPath, fsShaderPath;
+    if (argc == 2)
+    {
+        vsShaderPath = "Debug/shader.vs";
+        fsShaderPath = "Debug/shader.fs";
+    }
+    else
+    {
+        vsShaderPath = "Camera/Debug/shader.vs";
+        fsShaderPath = "Camera/Debug/shader.fs";
+    }
     GLFWwindow* window;
+    TCPClient client("127.0.0.1", 8008, true, 512, 512);
+    if (argc != 2 && !client.Connect())
+    {
+        std::cout << "Couldn't connect to server, stopping." << std::endl;
+        return 1;
+    }
 
     /* Initialize the library */
     if (!glfwInit())
@@ -104,7 +122,7 @@ int main(void)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Camera", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -129,12 +147,12 @@ int main(void)
 
     glEnable(GL_DEPTH_TEST);
 
-    Shader shader("shader.vs", "shader.fs");
+    Shader shader(vsShaderPath.c_str(), fsShaderPath.c_str());
 
     ModelLoader loader;
     unsigned int VBO, VAO, EBO, tex;
 
-    loader.StartLoading("house.obj", tex, VAO, VBO, EBO);
+    loader.StartLoading("house.obj", tex, VAO, VBO, EBO, argc == 2 ? "Debug/" : "Camera/Debug/");
 
     shader.use();
 
@@ -143,7 +161,7 @@ int main(void)
 
     shader.use();
     shader.setInt("tex", 0);
-
+    bool sent = false;
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
@@ -176,6 +194,12 @@ int main(void)
         shader.setBool("useDepth", depth);
 
         glDrawArrays(GL_TRIANGLES, 0, loader.VertexCount());
+
+        if (!sent)
+        {
+            sent = true;
+            client.SendImage(false);
+        }
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);

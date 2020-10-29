@@ -52,14 +52,14 @@ void TCPClient::Init()
 	initFinished = true;
 }
 
-void TCPClient::Connect()
+bool TCPClient::Connect()
 {
 	if (verbose)
 		std::cout << "Connecting to " << ipAddress << ":" << port << std::endl;
 	if (!initFinished)
 	{
 		std::cout << "Initialization is not finished, cannot connect." << std::endl;
-		return;
+		return false;
 	}
 	connection = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 	if (connection == SOCKET_ERROR)
@@ -67,7 +67,7 @@ void TCPClient::Connect()
 		std::cout << "The socket is invalid. Closing." << std::endl;
 		closesocket(connection);
 		connection = INVALID_SOCKET;
-		return;
+		return false;
 	}
 
 	if (connect(connection, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR)
@@ -75,7 +75,7 @@ void TCPClient::Connect()
 		std::cout << "Socket error: " << WSAGetLastError() << std::endl;
 		closesocket(connection);
 		connection = INVALID_SOCKET;
-		return;
+		return false;
 	}
 
 	if (verbose)
@@ -84,6 +84,7 @@ void TCPClient::Connect()
 	//std::thread readc([this] {this->ListenCycle(true); });
 	if (!ReadThread)
 		ReadThread = new std::thread([this] {this->ListenCycle(true); });
+	return true;
 }
 
 void TCPClient::Send(std::string message)
@@ -91,6 +92,7 @@ void TCPClient::Send(std::string message)
 	char msg[BUFFER_SIZE];
 	unsigned int pos = 0;
 	bool error = false;
+	int counter = 0;
 	while (pos < message.size())
 	{
 		for (size_t i = 0; i < BUFFER_SIZE; i++)
@@ -109,13 +111,13 @@ void TCPClient::Send(std::string message)
 			error = true;
 		}
 		else if (verbose)
-			std::cout << "Message part sent successfully." << std::endl;
+			counter++;
 	}
 
 	if (error)
 		std::cout << "Error while sending message." << std::endl;
 	else if (verbose)
-		std::cout << "Message sent successfully." << std::endl;
+		std::cout << counter << " message parts sent successfully." << std::endl;
 }
 
 std::string TCPClient::ReceiveLastMessage()

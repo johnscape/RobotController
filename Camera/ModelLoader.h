@@ -31,7 +31,7 @@ public:
 	ModelLoader();
 	~ModelLoader();
 
-	bool StartLoading(std::string file, unsigned int& texture, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO);
+	bool StartLoading(std::string file, unsigned int& texture, unsigned int& VAO, unsigned int& VBO, unsigned int& EBO, std::string folder = "");
 
 	bool LoadModel(std::string file);
 	bool LoadTextures(unsigned int& texture);
@@ -43,6 +43,7 @@ private:
 	float* VerticleArray;
 	unsigned int* IndiciesArray;
 	std::string texturePath;
+	std::string startingFolder;
 
 	std::vector<Verticle> verticles;
 	std::vector<Verticle> normalVerticles;

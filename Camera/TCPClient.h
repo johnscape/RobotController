@@ -21,7 +21,7 @@ public:
 	~TCPClient();
 
 	void Init();
-	void Connect();
+	bool Connect();
 
 	void Send(std::string message);
 	std::string ReceiveLastMessage();
@@ -29,7 +29,6 @@ public:
 	void Close();
 
 	void ListenCycle(bool v);
-
 	void SendImage(bool depth);
 
 private:
