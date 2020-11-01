@@ -146,3 +146,6 @@ Camera/x64/*
 *.bmp
 
 *.jpg
+
+old/
+videos/

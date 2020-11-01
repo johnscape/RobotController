@@ -85,21 +85,10 @@ bool ModelLoader::LoadModel(std::string file)
             textureVerticles.push_back(v);
         }
         else if (lineParts[0] == "vn")
-        {
-            if (phase == 1)
-            {
-                std::cout << "Reading normals..." << std::endl;
-                phase++;
-            }
-            Verticle v;
-            v.x = std::stof(lineParts[1]);
-            v.y = std::stof(lineParts[2]);
-            v.z = std::stof(lineParts[2]);
-            normalVerticles.push_back(v);
-        }
+            continue;
         else if (lineParts[0] == "f")
         {
-            if (phase == 2)
+            if (phase == 1)
             {
                 std::cout << "Reading faces..." << std::endl;
                 phase++;

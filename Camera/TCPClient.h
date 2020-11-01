@@ -31,6 +31,8 @@ public:
 	void ListenCycle(bool v);
 	void SendImage(bool depth);
 
+	void CheckOrders(unsigned char& movement, unsigned char& value);
+
 private:
 	WSAData wsadata;
 	SOCKET connection;

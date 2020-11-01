@@ -6,9 +6,19 @@ import time
 from Server.LZW import LZW
 import subprocess
 import os
+from enum import Enum, auto
+
+class CameraOrders(Enum):
+    MOVE_FORWARD = 241, #F1
+    MOVE_BACK = 242, #F2
+    TURN_LEFT = 243, #F3
+    TURN_RIGHT = 244, #F4
+    TAKE_RGB = 245, #F5
+    TAKE_DEPTH = 246 #F6
 
 class RobotServer:
     def __init__(self, port=8008, verbose=False):
+        socket.setdefaulttimeout(3.0)
         self.Port = port
         self.IpAddress = "127.0.0.1"
         self.Socket = None
@@ -22,6 +32,7 @@ class RobotServer:
         self.ReceivingMutex = threading.Lock()
         self.Decompressor = LZW()
         self.CameraAppPath = os.path.abspath("Camera/Debug/CameraController.exe")
+        logging.basicConfig(level=logging.DEBUG)
 
     def Start(self):
         if not os.path.exists(self.CameraAppPath):
@@ -37,10 +48,8 @@ class RobotServer:
         if self.Verbose:
             logging.info("Camera connected, starting communication.")
         self.Communication = threading.Thread(target=self.CommunicationLoop)
-        self.Socket.settimeout(1)
         self.Communication.start()
         
-
     def CommunicationLoop(self):
         while True:
             try:
@@ -49,10 +58,11 @@ class RobotServer:
                 #TODO: implement LZW
                 imgData = data
                 self.Incoming.append(imgData)
-            except socket.timeout:
-                continue
+            except socket.timeout as e:
+                pass
             if len(self.Outgoing) > 0:
                 self.Connection.send(self.Outgoing[0])
+                logging.info("Sending message: " + str(self.Outgoing[0]))
                 self.Outgoing.pop(0)
 
                 

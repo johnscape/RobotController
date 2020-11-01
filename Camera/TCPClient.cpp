@@ -130,7 +130,7 @@ std::string TCPClient::ReceiveLastMessage()
 		messages.pop();
 	}
 	messageLock.unlock();
-	return std::string();
+	return msg;
 }
 
 void TCPClient::Close()
@@ -189,7 +189,46 @@ void TCPClient::SendImage(bool depth)
 		glReadPixels(0, 0, WinWidth, WinHeight, GL_RGB, GL_UNSIGNED_BYTE, colorBuffer);
 		std::string s;
 		for (size_t i = 0; i < WinWidth * WinHeight * 3; i++)
-			s += depthBuffer[i];
+			s += colorBuffer[i];
 		Send(s);
+	}
+}
+
+void TCPClient::CheckOrders(unsigned char& movement, unsigned char& value)
+{
+	std::string lastMsg = ReceiveLastMessage();
+	if (lastMsg == "")
+		return;
+	unsigned char val = lastMsg[0];
+	if (val < 0)
+		val += 255;
+	switch (val)
+	{
+		
+		case 0xF1:
+			movement = 1;
+			value = lastMsg[0];
+			break;
+		case 0xF2:
+			movement = 2;
+			value = lastMsg[0];
+			break;
+		case 0xF3:
+			movement = 3;
+			value = lastMsg[0];
+			break;
+		case 0xF4:
+			movement = 4;
+			value = lastMsg[0];
+			break;
+		case 0xF5:
+			SendImage(false);
+			movement = 5;
+			break;
+		case 0xF6:
+			SendImage(true);
+			break;
+		default:
+			break;
 	}
 }

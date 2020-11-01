@@ -46,7 +46,6 @@ private:
 	std::string startingFolder;
 
 	std::vector<Verticle> verticles;
-	std::vector<Verticle> normalVerticles;
 	std::vector<Verticle> textureVerticles;
 	std::vector<Face> faces;
 

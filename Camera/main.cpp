@@ -29,7 +29,7 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-Camera camera(glm::vec3(3.0f, 0.4f, -4.0f));
+Camera camera(glm::vec3(-3.26f, 0.4f, -4.0f));
 bool firstMouse = true; // csak lekezeljuk az eslo eger mozgatast
 float yaw = -90.0f;    // yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
 float pitch = 0.0f;
@@ -161,27 +161,57 @@ int main(int argc, char* argv[])
 
     shader.use();
     shader.setInt("tex", 0);
-    bool sent = false;
+    bool first = false;
+    unsigned char movement, speed;
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
+        movement = 0;
+        speed = 0;
+
+        if (!first)
+            first = true;
+        else
+        {
+            //std::cout << "Checking orders..." << std::endl;
+            client.CheckOrders(movement, speed);
+            switch (movement)
+            {
+                case 1:
+                    camera.ProcessKeyboard(FORWARD, 50);
+                    break;
+                case 2:
+                    camera.ProcessKeyboard(BACKWARD, 50);
+                    break;
+                case 3:
+                    camera.ProcessMouseMovement(15, 0);
+                    break;
+                case 4:
+                    camera.ProcessMouseMovement(-15, 0);
+                    break;
+                case 5:
+                    saveImage(window);
+                    break;
+                default:
+                    break;
+            }
+        }
+
         /* Render here */
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        glClearColor(0.7, 0.7, 0.7, 1.0);
+        glClearColor(0.0, 0.0, 0.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, tex);
 
         shader.use();
-        //glm::mat4 projection = glm::perspective(glm::radians(90.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.01f, 100.0f);
         glm::mat4 projection = glm::perspective(glm::radians(camera.GetZoom()), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         shader.setMat4("projection", projection);
 
-        //glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 view = camera.GetViewMatrix();
         shader.setMat4("view", view);
 
@@ -195,12 +225,6 @@ int main(int argc, char* argv[])
 
         glDrawArrays(GL_TRIANGLES, 0, loader.VertexCount());
 
-        if (!sent)
-        {
-            sent = true;
-            client.SendImage(false);
-        }
-
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
@@ -213,25 +237,11 @@ int main(int argc, char* argv[])
 }
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    /*if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cameraPos += glm::vec3(0.0f, 0.01f, 0.0f);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos += glm::vec3(0.0f, -0.01f, 0.0f);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cameraPos += glm::vec3(0.01f, 0.0f, 0.0f);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cameraPos += glm::vec3(-0.01f, 0.0f, 0.0f);
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-        cameraPos += glm::vec3(0.0f, 0.0f, 0.01f);
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        cameraPos += glm::vec3(0.0f, 0.0f, -0.01f);*/
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
+        camera.ProcessKeyboard(FORWARD, deltaTime/4);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         camera.ProcessKeyboard(BACKWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
@@ -242,6 +252,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         depth = !depth;
     if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
         saveImage(window);
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        camera.ProcessMouseMovement(15, 0);
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
@@ -253,11 +265,7 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
     }
 }
 
-// glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    // make sure the viewport matches the new window dimensions; note that width and
-    // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
 }
 
@@ -271,17 +279,15 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     }
 
     float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+    float yoffset = lastY - ypos;
 
     lastX = xpos;
     lastY = ypos;
 
-    camera.ProcessMouseMovement(xoffset, yoffset);
+    //camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
-// zooming
-// amikor a fov kisebb lesz akkor a projektalt space is kisebb lesz ami olyan hatast kelt mintha zoom olnank
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    camera.ProcessMouseScroll(yoffset);
+    //camera.ProcessMouseScroll(yoffset);
 }
